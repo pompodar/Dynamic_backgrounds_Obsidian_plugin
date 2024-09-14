@@ -30,12 +30,11 @@ export default class MyPlugin extends Plugin {
 		this.intervalId = window.setInterval(() => {
 			console.log(this.settings.backgrounds[index]);
 			const titleBarTexts = document.querySelectorAll(".view-content") as NodeListOf<HTMLElement>;
-			titleBarTexts.forEach((titleBarText, index) => {
+			titleBarTexts.forEach((titleBarText) => {
 				// Apply the background image
 				titleBarText.style.backgroundImage = `${this.settings.backgrounds[index]}`;
 				titleBarText.style.backgroundSize = "cover";
 				titleBarText.style.backgroundPosition = "center";
-
 				// Ensure position relative for the overlay and content
 				titleBarText.style.position = "relative";
 				titleBarText.style.zIndex = "2";  // Ensure content is above the overlay
