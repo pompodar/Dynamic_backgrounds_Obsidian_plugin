@@ -5,6 +5,7 @@ interface MyPluginSettings {
 	interval: number;
 	backgrounds: string[];
 	opacitySettings: {
+		sidebar: number;
 		viewContent: number;
 		tabHeaderContainer: number;
 		tabHeader: number;
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 		"url('https://img.freepik.com/free-photo/geometric-shapes-orange-background_23-2148209958.jpg?size=626&ext=jpg&ga=GA1.1.1174352020.1726297089&semt=ais_hybrid')",
 	],
 	opacitySettings: {
+		sidebar: 0.5,
 		viewContent: 0.5,
 		tabHeaderContainer: 0.5,
 		tabHeader: 0.5,
@@ -125,9 +127,6 @@ export default class MyPlugin extends Plugin {
 
 		// Start observing the document for changes
 		observer.observe(document.body, { childList: true, subtree: true });
-
-		// Do not disconnect the observer unless it's absolutely necessary.
-		// If necessary, disconnect when you know no more mutations will occur.
 	}
 
 
@@ -192,6 +191,27 @@ class MyPluginSettingTab extends PluginSettingTab {
 					this.plugin.updateBackgrounds();  // Reload backgrounds after changing the background images
 				}));
 
+		const titleBarTexts = document.querySelectorAll(".view-content") as NodeListOf<HTMLElement>;
+
+		// Add settings for opacity per element
+		new Setting(containerEl)
+			.setName('Sidebar Opacity')
+			.setDesc('Opacity for the sidebar background overlay.')
+			.addSlider(slider => slider
+				.setLimits(0, 1, 0.1)
+				.setValue(this.plugin.settings.opacitySettings.sidebar)
+				.onChange(async (value) => {
+					this.plugin.settings.opacitySettings.sidebar = value;
+
+					const headerOverlayContainers = document.querySelectorAll(".workspace-tab-header-container .background-overlay") as NodeListOf<HTMLElement>;
+					headerOverlayContainers.forEach(cont => {
+						cont.style.background = `rgba(255, 255, 255, ${value})`;
+					});
+
+					await this.plugin.saveSettings();
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
+				}));
+
 		// Add settings for opacity per element
 		new Setting(containerEl)
 			.setName('View Content Opacity')
@@ -201,6 +221,12 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.opacitySettings.viewContent)
 				.onChange(async (value) => {
 					this.plugin.settings.opacitySettings.viewContent = value;
+
+					const headerOverlayContainers = document.querySelectorAll(".workspace-tab-header-container .background-overlay") as NodeListOf<HTMLElement>;
+					headerOverlayContainers.forEach(cont => {
+						cont.style.background = `rgba(255, 255, 255, ${value})`;
+					});
+
 					await this.plugin.saveSettings();
 					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
 				}));
@@ -213,8 +239,13 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.setLimits(0, 1, 0.1)
 				.setValue(this.plugin.settings.opacitySettings.tabHeaderContainer)
 				.onChange(async (value) => {
-					alert('Opacity changed!');
 					this.plugin.settings.opacitySettings.tabHeaderContainer = value;
+
+					const headerOverlayTabs = document.querySelectorAll(".workspace-tab-header .background-overlay") as NodeListOf<HTMLElement>;
+					headerOverlayTabs.forEach(tab => {
+						tab.style.background = `rgba(255, 255, 255, ${value})`;
+					});
+
 					await this.plugin.saveSettings();
 					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
 				}));
@@ -228,6 +259,12 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.opacitySettings.tabHeader)
 				.onChange(async (value) => {
 					this.plugin.settings.opacitySettings.tabHeader = value;
+
+					const workspaceOverlayLeaves = document.querySelectorAll(".workspace-leaf .background-overlay") as NodeListOf<HTMLElement>;
+					workspaceOverlayLeaves.forEach(leave => {
+						leave.style.background = `rgba(255, 255, 255, ${value})`;
+					});
+
 					await this.plugin.saveSettings();
 					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
 				}));
@@ -241,6 +278,12 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.opacitySettings.workspaceLeaf)
 				.onChange(async (value) => {
 					this.plugin.settings.opacitySettings.workspaceLeaf = value;
+
+					const kanbanOverlayLanes = document.querySelectorAll(".kanban-plugin__lane .background-overlay") as NodeListOf<HTMLElement>;
+					kanbanOverlayLanes.forEach(lane => {
+						lane.style.background = `rgba(255, 255, 255, ${value})`;
+					});
+
 					await this.plugin.saveSettings();
 					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
 				}));
@@ -254,6 +297,14 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.opacitySettings.kanbanItem)
 				.onChange(async (value) => {
 					this.plugin.settings.opacitySettings.kanbanItem = value;
+
+					const kanbanOverlayItems = document.querySelectorAll(".kanban-plugin__item-title-wrapper .background-overlay") as NodeListOf<HTMLElement>;
+					kanbanOverlayItems.forEach(tab => {
+						console.log(tab, value);
+
+						tab.style.background = `rgba(255, 255, 255, ${value})`;
+					});
+
 					await this.plugin.saveSettings();
 					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
 				}));
