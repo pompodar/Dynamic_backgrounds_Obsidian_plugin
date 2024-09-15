@@ -4,11 +4,28 @@ import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 interface MyPluginSettings {
 	interval: number;
 	backgrounds: string[];
+	opacitySettings: {
+		viewContent: number;
+		tabHeaderContainer: number;
+		tabHeader: number;
+		workspaceLeaf: number;
+		kanbanItem: number;
+	};
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	interval: 3000, // 3 seconds
-	backgrounds: ["url('https://img.freepik.com/free-photo/geometric-shapes-orange-background_23-2148209958.jpg?size=626&ext=jpg&ga=GA1.1.1174352020.1726297089&semt=ais_hybrid')", "url('https://img.freepik.com/free-photo/geometric-shapes-orange-background_23-2148209958.jpg?size=626&ext=jpg&ga=GA1.1.1174352020.1726297089&semt=ais_hybrid')"],
+	backgrounds: [
+		"url('https://img.freepik.com/free-photo/geometric-shapes-orange-background_23-2148209958.jpg?size=626&ext=jpg&ga=GA1.1.1174352020.1726297089&semt=ais_hybrid')",
+		"url('https://img.freepik.com/free-photo/geometric-shapes-orange-background_23-2148209958.jpg?size=626&ext=jpg&ga=GA1.1.1174352020.1726297089&semt=ais_hybrid')",
+	],
+	opacitySettings: {
+		viewContent: 0.5,
+		tabHeaderContainer: 0.5,
+		tabHeader: 0.5,
+		workspaceLeaf: 0.5,
+		kanbanItem: 0.2,
+	},
 };
 
 export default class MyPlugin extends Plugin {
@@ -29,11 +46,6 @@ export default class MyPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
 			this.updateBackgrounds();
 		}));
-
-		// Listen for workspace layout changes
-		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-			this.updateBackgrounds();
-		}));
 	}
 
 	startBackgroundChange() {
@@ -43,14 +55,16 @@ export default class MyPlugin extends Plugin {
 		}, this.settings.interval);
 	}
 
-	applyBackgroundAndOverlay(elements: NodeListOf<HTMLElement>, backgroundImageUrl: string) {
+	applyBackgroundAndOverlay(elements: NodeListOf<HTMLElement>, backgroundImageUrl: string, opacity: number) {
 		elements.forEach((element) => {
 			// Apply the background image
-			element.style.backgroundImage = `${backgroundImageUrl}`;
+			element.style.backgroundImage = `url("${backgroundImageUrl}")`;
 			element.style.backgroundSize = "cover";
 			element.style.backgroundPosition = "center";
 			element.style.position = "relative";
 			element.style.zIndex = "2";  // Ensure content is above the overlay
+			element.style.boxShadow = "10px 10px 5px 0px rgba(0, 0, 0, 0.75)";
+			element.style.border = "1px orange solid";
 
 			// Check if overlay already exists by class name
 			if (!element.querySelector('.background-overlay')) {
@@ -62,7 +76,8 @@ export default class MyPlugin extends Plugin {
 				overlay.style.left = "0";
 				overlay.style.width = "100%";
 				overlay.style.height = "100%";
-				overlay.style.backgroundColor = "rgba(255, 255, 255, 0.5)";  // White overlay with 50% opacity
+
+				overlay.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;  // Apply the configured opacity
 				overlay.style.zIndex = "-1";  // Ensure overlay is below the content
 				overlay.style.pointerEvents = "none";  // Makes the overlay non-interactive
 
@@ -74,12 +89,47 @@ export default class MyPlugin extends Plugin {
 
 	updateBackgrounds() {
 		const backgroundImageUrl = this.settings.backgrounds[this.currentBackgroundIndex]; // Use the current background image from settings
+
+		// Apply background with configured opacity to different elements
 		const titleBarTexts = document.querySelectorAll(".view-content") as NodeListOf<HTMLElement>;
-		this.applyBackgroundAndOverlay(titleBarTexts, backgroundImageUrl);
+		this.applyBackgroundAndOverlay(titleBarTexts, backgroundImageUrl, this.settings.opacitySettings.viewContent);
 
 		const headerContainers = document.querySelectorAll(".workspace-tab-header-container") as NodeListOf<HTMLElement>;
-		this.applyBackgroundAndOverlay(headerContainers, backgroundImageUrl);
+		this.applyBackgroundAndOverlay(headerContainers, backgroundImageUrl, this.settings.opacitySettings.tabHeaderContainer);
+
+		const headerTabs = document.querySelectorAll(".workspace-tab-header") as NodeListOf<HTMLElement>;
+		this.applyBackgroundAndOverlay(headerTabs, backgroundImageUrl, this.settings.opacitySettings.tabHeader);
+
+		const workspaceLeaf = document.querySelectorAll(".workspace-leaf") as NodeListOf<HTMLElement>;
+		this.applyBackgroundAndOverlay(workspaceLeaf, backgroundImageUrl, this.settings.opacitySettings.workspaceLeaf);
+
+		// Use a single MutationObserver to handle kanban and other dynamically added elements
+		const observer = new MutationObserver((mutationsList) => {
+			mutationsList.forEach(mutation => {
+				// Check if new nodes have been added
+				if (mutation.addedNodes.length > 0) {
+					// Check for kanban lanes
+					const kanbanLane = document.querySelectorAll(".kanban-plugin__lane") as NodeListOf<HTMLElement>;
+					if (kanbanLane.length > 0) {
+						this.applyBackgroundAndOverlay(kanbanLane, backgroundImageUrl, this.settings.opacitySettings.viewContent);
+					}
+
+					// Check for kanban items
+					const kanbanItems = document.querySelectorAll(".kanban-plugin__item-title-wrapper") as NodeListOf<HTMLElement>;
+					if (kanbanItems.length > 0) {
+						this.applyBackgroundAndOverlay(kanbanItems, backgroundImageUrl, this.settings.opacitySettings.kanbanItem);
+					}
+				}
+			});
+		});
+
+		// Start observing the document for changes
+		observer.observe(document.body, { childList: true, subtree: true });
+
+		// Do not disconnect the observer unless it's absolutely necessary.
+		// If necessary, disconnect when you know no more mutations will occur.
 	}
+
 
 	onunload() {
 		// Clear the interval when the plugin is unloaded
@@ -110,6 +160,7 @@ class MyPluginSettingTab extends PluginSettingTab {
 
 		containerEl.createEl('h2', { text: 'Background Switcher Settings' });
 
+		// Setting for switch interval
 		new Setting(containerEl)
 			.setName('Switch Interval (ms)')
 			.setDesc('Time between background changes in milliseconds.')
@@ -119,8 +170,15 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.interval = parseInt(value);
 					await this.plugin.saveSettings();
+
+					// Clear the old interval and restart the background switcher with the new interval
+					window.clearInterval(this.plugin.intervalId);
+					this.plugin.startBackgroundChange();  // Restart the interval with new settings
+
+					this.plugin.updateBackgrounds();  // Reload backgrounds immediately after the change
 				}));
 
+		// Setting for background images
 		new Setting(containerEl)
 			.setName('Background Images')
 			.setDesc('Comma-separated list of image URLs or colors.')
@@ -130,7 +188,74 @@ class MyPluginSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.backgrounds = value.split(',').map(v => v.trim());
 					await this.plugin.saveSettings();
-					this.plugin.updateBackgrounds(); // Update backgrounds when settings change
+
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing the background images
+				}));
+
+		// Add settings for opacity per element
+		new Setting(containerEl)
+			.setName('View Content Opacity')
+			.setDesc('Opacity for the view content background overlay.')
+			.addSlider(slider => slider
+				.setLimits(0, 1, 0.1)
+				.setValue(this.plugin.settings.opacitySettings.viewContent)
+				.onChange(async (value) => {
+					this.plugin.settings.opacitySettings.viewContent = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
+				}));
+
+		// Setting for tab header container opacity
+		new Setting(containerEl)
+			.setName('Tab Header Container Opacity')
+			.setDesc('Opacity for the tab header container background overlay.')
+			.addSlider(slider => slider
+				.setLimits(0, 1, 0.1)
+				.setValue(this.plugin.settings.opacitySettings.tabHeaderContainer)
+				.onChange(async (value) => {
+					alert('Opacity changed!');
+					this.plugin.settings.opacitySettings.tabHeaderContainer = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
+				}));
+
+		// Setting for tab header opacity
+		new Setting(containerEl)
+			.setName('Tab Header Opacity')
+			.setDesc('Opacity for the tab header background overlay.')
+			.addSlider(slider => slider
+				.setLimits(0, 1, 0.1)
+				.setValue(this.plugin.settings.opacitySettings.tabHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.opacitySettings.tabHeader = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
+				}));
+
+		// Setting for workspace leaf opacity
+		new Setting(containerEl)
+			.setName('Workspace Leaf Opacity')
+			.setDesc('Opacity for the workspace leaf background overlay.')
+			.addSlider(slider => slider
+				.setLimits(0, 1, 0.1)
+				.setValue(this.plugin.settings.opacitySettings.workspaceLeaf)
+				.onChange(async (value) => {
+					this.plugin.settings.opacitySettings.workspaceLeaf = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
+				}));
+
+		// Setting for kanban item title opacity
+		new Setting(containerEl)
+			.setName('Kanban Item Title Opacity')
+			.setDesc('Opacity for the Kanban item title background overlay.')
+			.addSlider(slider => slider
+				.setLimits(0, 1, 0.1)
+				.setValue(this.plugin.settings.opacitySettings.kanbanItem)
+				.onChange(async (value) => {
+					this.plugin.settings.opacitySettings.kanbanItem = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateBackgrounds();  // Reload backgrounds after changing opacity
 				}));
 	}
 }
