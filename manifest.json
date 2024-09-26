@@ -1,9 +1,9 @@
 {
-	"id": "dynamic-backgrounds-plugin",
-	"name": "Dynamic Backgrounds Plugin",
+	"id": "dynamic-backgrounds",
+	"name": "Dynamic Backgrounds",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Transform your Obsidian experience with stunning backgrounds.",
+	"description": "Transform your note-taking experience with stunning backgrounds.",
 	"author": "Pompodare",
 	"authorUrl": "https://github.com/pompodar",
 	"fundingUrl": "https://github.com/pompodar",
