@@ -102,6 +102,9 @@ export default class MyPlugin extends Plugin {
 		const headerTabs = document.querySelectorAll(".workspace-tab-header") as NodeListOf<HTMLElement>;
 		this.applyBackgroundAndOverlay(headerTabs, this.settings.opacitySettings.tabHeader);
 
+		const viewHeaders = document.querySelectorAll(".view-header") as NodeListOf<HTMLElement>;
+		this.applyBackgroundAndOverlay(viewHeaders, this.settings.opacitySettings.tabHeader);
+
 		const workspaceLeaf = document.querySelectorAll(".workspace-leaf") as NodeListOf<HTMLElement>;
 		this.applyBackgroundAndOverlay(workspaceLeaf, this.settings.opacitySettings.workspaceLeaf);
 

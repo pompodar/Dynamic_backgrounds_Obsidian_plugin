@@ -3,9 +3,9 @@
 	"name": "Dynamic Backgrounds Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Transform your Obsidian experience with stunning backgrounds.",
+	"author": "Pompodare",
+	"authorUrl": "https://github.com/pompodar",
+	"fundingUrl": "https://github.com/pompodar",
 	"isDesktopOnly": false
 }
