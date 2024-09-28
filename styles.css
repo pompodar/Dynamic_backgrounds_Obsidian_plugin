@@ -6,3 +6,26 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+.view-content.dynamic-backgrounds,
+.workspace-tab-header.dynamic-backgrounds,
+.view-header.dynamic-backgrounds,
+.workspace-leaf.dynamic-backgrounds,
+.kanban-plugin__lane.dynamic-backgrounds,
+.kanban-plugin__item-title-wrapper.dynamic-backgrounds {
+	background-size: cover;
+	background-position: center;
+	position: relative;
+	z-index: 2;
+	box-shadow: 10px 10px 5px 0px rgba(0, 0, 0, 0.75);
+}
+
+.dynamic-backgrounds-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: -1;
+	pointer-events: none;
+}
