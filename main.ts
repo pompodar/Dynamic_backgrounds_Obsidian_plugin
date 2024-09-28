@@ -194,5 +194,6 @@ class MyPluginSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 				.setDynamicTooltip());
+
 	}
 }
